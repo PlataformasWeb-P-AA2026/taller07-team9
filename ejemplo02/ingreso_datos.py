@@ -1,72 +1,69 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+# se importa información del archivo configuracion
 from configuracion import cadena_base_datos
+# se importan las clases de genera_tablas
 from genera_tablas import Club, Jugador
 
+# se genera el enlace al gestor de base de datos
+engine = create_engine(cadena_base_datos)
 
-def cargar_clubs(session, path_archivo):
-    """Lee clubs desde un .csv con formato: nombre;deporte;fundacion"""
-    with open(path_archivo, encoding="utf-8") as f:
-        for linea in f:
-            linea = linea.strip()
-            if not linea:
-                continue
-            partes = [p.strip() for p in linea.split(";")]
-            if len(partes) != 3:
-                continue
+Session = sessionmaker(bind=engine)
+session = Session()
 
-            nombre, deporte, fundacion = partes
-            try:
-                fundacion = int(fundacion)
-            except ValueError:
-                continue
+# Importar Clubs
+with open("data/datos_clubs.csv", "r", encoding="utf-8") as archivo_clubs:
+    lineas_clubs = archivo_clubs.readlines()
 
-            if not session.query(Club).filter_by(nombre=nombre).first():
-                session.add(Club(nombre=nombre, deporte=deporte, fundacion=fundacion))
+# Diccionario para mapear nombre del club con su objeto de SQLAlchemy
+diccionario_clubs = {}
 
+for linea in lineas_clubs:
+    linea = linea.strip()
+    if not linea:
+        continue
+    
+    partes = linea.split(";")
+    nombre = partes[0]
+    deporte = partes[1]
+    fundacion = int(partes[2])
+    
+    club = Club(nombre=nombre, deporte=deporte, fundacion=fundacion)
+    session.add(club)
+    
+    # Guardamos en el diccionario para usarlo luego con los jugadores
+    diccionario_clubs[nombre] = club
 
-def cargar_jugadores(session, path_archivo):
-    """Lee jugadores desde un .csv con formato: club;posicion;dorsal;nombre.
+# Guardar los clubs en la base de datos para que se les asigne un ID
+session.commit()
 
-    Si una línea viene incompleta (ej. sin dorsal), se ignora.
-    """
-    with open(path_archivo, encoding="utf-8") as f:
-        for linea in f:
-            linea = linea.strip()
-            if not linea:
-                continue
+# Importar Jugadores
+with open("data/datos_jugadores.csv", "r", encoding="utf-8") as archivo_jugadores:
+    lineas_jugadores = archivo_jugadores.readlines()
 
-            partes = [p.strip() for p in linea.split(";")]
-            if len(partes) != 4:
-                continue
+for linea in lineas_jugadores:
+    linea = linea.strip()
+    if not linea:
+        continue
+    
+    partes = linea.split(";")
+    # Formato: Nombre del Club; Posición; Dorsal; Nombre del Jugador
+    nombre_club = partes[0]
+    posicion = partes[1]
+    dorsal = int(partes[2])
+    nombre_jugador = partes[3]
+    
+    club_relacionado = diccionario_clubs.get(nombre_club)
+    
+    if club_relacionado:
+        jugador = Jugador(
+            nombre=nombre_jugador,
+            dorsal=dorsal,
+            posicion=posicion,
+            club=club_relacionado
+        )
+        session.add(jugador)
 
-            nombre_club, posicion, dorsal, nombre = partes
-            try:
-                dorsal = int(dorsal)
-            except ValueError:
-                continue
-
-            club = session.query(Club).filter_by(nombre=nombre_club).first()
-            if not club:
-                continue
-
-            session.add(Jugador(nombre=nombre, dorsal=dorsal, posicion=posicion, club=club))
-
-
-def main():
-    engine = create_engine(cadena_base_datos)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    cargar_clubs(session, "data/datos_clubs.csv")
-    session.commit()
-
-    cargar_jugadores(session, "data/datos_jugadores.csv")
-    session.commit()
-
-    session.close()
-
-
-if __name__ == "__main__":
-    main()
+session.commit()
+print("Datos importados exitosamente a la base de datos.")
