@@ -11,7 +11,6 @@ engine = create_engine(cadena_base_datos)
 Session = sessionmaker(bind=engine)
 session = Session()
 
-# Realizamos el JOIN usando directamente las entidades y filtramos por el nombre
 inscripciones = session.query(Inscripcion).join(Curso).join(Departamento).filter(
     Departamento.nombre.like("%Compu%")
 ).all()
