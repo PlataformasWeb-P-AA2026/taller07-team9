@@ -10,6 +10,9 @@ engine = create_engine(cadena_base_datos)
 Session = sessionmaker(bind=engine)
 session = Session()
 
+def parsear_fecha(fecha_str):
+    return datetime.strptime(fecha_str, "%Y-%m-%d %H:%M:%S")
+
 # 1. Importar Departamento
 with open("01_departamento.csv", "r", encoding="utf-8") as archivo:
     lineas = archivo.readlines()[1:] 
@@ -76,7 +79,7 @@ with open("05_inscripcion.csv", "r", encoding="utf-8") as archivo:
         if not linea:
             continue
         partes = linea.split(",")
-        fecha = datetime.strptime(partes[2], "%Y-%m-%d %H:%M:%S")
+        fecha = parsear_fecha(partes[2])
         inscripcion = Inscripcion(
             estudiante_id=int(partes[0]),
             curso_id=int(partes[1]),
@@ -92,7 +95,7 @@ with open("06_tarea.csv", "r", encoding="utf-8") as archivo:
         if not linea:
             continue
         partes = linea.split(",")
-        fecha = datetime.strptime(partes[3], "%Y-%m-%d %H:%M:%S")
+        fecha = parsear_fecha(partes[3])
         tarea = Tarea(
             id=int(partes[0]),
             curso_id=int(partes[1]),
@@ -109,7 +112,7 @@ with open("07_entrega.csv", "r", encoding="utf-8") as archivo:
         if not linea:
             continue
         partes = linea.split(",")
-        fecha = datetime.strptime(partes[3], "%Y-%m-%d %H:%M:%S")
+        fecha = parsear_fecha(partes[3])
         entrega = Entrega(
             id=int(partes[0]),
             tarea_id=int(partes[1]),
