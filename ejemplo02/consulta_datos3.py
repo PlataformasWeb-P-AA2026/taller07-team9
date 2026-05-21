@@ -34,7 +34,7 @@ for s in clubs:
     jugadores = s.jugadores # es una secuencia; es una lista
     # [objJugador1, objJugador2, objJugador3, ..., objJugadorN]
     for i in jugadores:
-        print(i.dorsal)
+        print(f"El jugador {i.nombre} pertenece al club {i.club.nombre}")
         
     print("---------")
 
